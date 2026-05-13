@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "sync-assets": "node scripts/sync-assets.js"
   },
   "dependencies": {
     "next": "16.2.6",
