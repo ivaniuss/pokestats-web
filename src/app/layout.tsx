@@ -113,7 +113,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {help && (
           <div className="fixed inset-0 z-30 bg-black/60 flex items-center justify-center p-4" onClick={() => setHelp(null)}>
             <div className="bg-slate-800 border border-slate-600 rounded-xl p-5 max-w-lg w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-              <h2 className="text-lg font-bold text-yellow-400 mb-3">{HELP[help as keyof typeof HELP]?.[lang]?.title || help}</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-bold text-yellow-400">{HELP[help as keyof typeof HELP]?.[lang]?.title || help}</h2>
+                <div className="flex gap-1">
+                  {(["en", "es", "pt"] as const).map((l) => (
+                    <button key={l} onClick={() => setLang(l)}
+                      className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${lang === l ? "bg-yellow-500 text-black" : "bg-slate-700 text-slate-400 hover:text-white"}`}
+                    >{l}</button>
+                  ))}
+                </div>
+              </div>
               <pre className="text-sm text-slate-300 whitespace-pre-wrap font-sans leading-relaxed">
                 {HELP[help as keyof typeof HELP]?.[lang]?.body || "No info available."}
               </pre>
@@ -123,10 +132,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     className={`px-3 py-1 rounded text-xs ${help === k ? "bg-yellow-500 text-black" : "bg-slate-700 text-slate-300 hover:bg-slate-600"}`}
                   >{v[lang].title}</button>
                 ))}
-                <button onClick={() => setLang({ en: "es", es: "pt", pt: "en" }[lang] as "en" | "es" | "pt")}
-                  className="px-3 py-1 rounded text-xs bg-slate-700 text-slate-300 hover:bg-slate-600"
-                >{LANG[lang]}</button>
-                <button onClick={() => setHelp(null)} className="px-3 py-1 rounded text-xs bg-slate-700 text-slate-300 hover:bg-slate-600">Close</button>
+                <button onClick={() => setHelp(null)} className="px-3 py-1 rounded text-xs bg-slate-700 text-slate-300 hover:bg-slate-600 ml-auto">Close</button>
               </div>
             </div>
           </div>
