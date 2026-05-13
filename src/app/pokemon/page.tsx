@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import type { PokemonStat } from "@/lib/api"
 import { PkmImg, ItemImg } from "@/components/pkm-img"
 import { useSort, SortTh } from "@/components/sort"
 
-function PokemonGroup({ name, entries, pkmIndex }: { name: string; entries: PokemonStat[]; pkmIndex: Record<string, string> }) {
+function PokemonGroup({ name, entries, pkmIndex, refMap }: { name: string; entries: PokemonStat[]; pkmIndex: Record<string, string>; refMap: Map<string, HTMLDetailsElement> }) {
   const [sortKey, setSortKey] = useState<keyof PokemonStat>("avg_rank")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
@@ -28,7 +28,7 @@ function PokemonGroup({ name, entries, pkmIndex }: { name: string; entries: Poke
   }
 
   return (
-    <details className="mb-3">
+    <details className="mb-3" ref={(el) => { if (el) refMap.set(name, el) }}>
       <summary className="cursor-pointer text-lg font-semibold text-yellow-400 flex items-center gap-2">
         <PkmImg name={name} index={pkmIndex[name]} size={36} />
         {name}
@@ -73,6 +73,7 @@ export default function PokemonPage() {
   const [pkmIndex, setPkmIndex] = useState<Record<string, string>>({})
   const [query, setQuery] = useState("")
   const [loading, setLoading] = useState(true)
+  const detailsRefs = useRef<Map<string, HTMLDetailsElement>>(new Map())
 
   useEffect(() => {
     Promise.all([
@@ -109,10 +110,19 @@ export default function PokemonPage() {
         placeholder="Search Pokémon..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && grouped.size > 0) {
+            const first = [...grouped.keys()][0]
+            const el = detailsRefs.current.get(first)
+            if (el) el.open = !el.open
+          }
+        }}
       />
       {[...grouped.entries()].map(([name, entries]) => (
-        <PokemonGroup key={name} name={name} entries={entries} pkmIndex={pkmIndex} />
+        <PokemonGroup
+          key={name} name={name} entries={entries} pkmIndex={pkmIndex}
+          refMap={detailsRefs.current}
+        />
       ))}
       {query && filtered.length === 0 && <p className="text-slate-500">No matches.</p>}
     </div>
