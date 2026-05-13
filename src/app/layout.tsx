@@ -43,13 +43,14 @@ const HELP: Record<string, Record<string, { title: string; body: string }>> = {
     pt: { title: "Count", body: "Quantidade de partidas registradas com este dado. Quanto maior, mais representativo estatisticamente. Valores baixos (ex. < 100) podem ser enganosos — uma única partida com sorte distorce a média." },
   },
   pages: {
-    en: { title: "Pages", body: "• Pokémon — Search a Pokémon and see the best items to use on it, with per-tier stats and global item rankings.\n• Top Pokémon — Highest performing Pokémon by average rank, filterable by tier.\n• Top Items — Highest performing items by average rank, filterable by tier.\n• Compositions — Winning team compositions from the current meta." },
+    en: { title: "Pages", body: "• Best Items — Search a Pokémon and see the best items to use on it, ranked by global performance across tiers.\n• Pokémon — Stats per Pokémon broken down by rank tier.\n• Top Pokémon — Highest performing Pokémon by average rank, filterable by tier.\n• Top Items — Highest performing items by average rank, filterable by tier.\n• Compositions — Winning team compositions from the current meta." },
     es: { title: "Páginas", body: "• Best Items — Busca un Pokémon y ve los mejores items para usarlo, ordenados por rendimiento según tier.\n• Pokémon — Estadísticas de cada Pokémon separado por tier de ranking.\n• Top Pokémon — Los Pokémon con mejor avg_rank, filtrable por tier.\n• Top Items — Los items con mejor avg_rank, filtrable por tier.\n• Compositions — Composiciones de equipo ganadoras del meta actual." },
     pt: { title: "Páginas", body: "• Best Items — Procure um Pokémon e veja os melhores itens para usar nele, ordenados por desempenho por tier.\n• Pokémon — Estatísticas de cada Pokémon separado por tier de ranking.\n• Top Pokémon — Os Pokémon com melhor avg_rank, filtrável por tier.\n• Top Items — Os itens com melhor avg_rank, filtrável por tier.\n• Compositions — Composições de equipe vencedoras do meta atual." },
   },
 }
 
 const nav = [
+  { href: "/best-items", label: "Best Items" },
   { href: "/pokemon", label: "Pokémon" },
   { href: "/top-pokemon", label: "Top Pokémon" },
   { href: "/top-items", label: "Top Items" },

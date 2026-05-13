@@ -1,150 +1,132 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
+import type { PokemonStat } from "@/lib/api"
 import { PkmImg, ItemImg } from "@/components/pkm-img"
+import { useSort, SortTh } from "@/components/sort"
 
-type MergedPkm = {
-  pokemon: string
-  items: Record<string, { games: number; tiers: string[]; avg_rank: number }>
-  tiers: Record<string, { avg_rank: number; games: number; items: string[] }>
+function PokemonGroup({ name, entries, pkmIndex, refMap }: { name: string; entries: PokemonStat[]; pkmIndex: Record<string, string>; refMap: Map<string, HTMLDetailsElement> }) {
+  const [sortKey, setSortKey] = useState<keyof PokemonStat>("avg_rank")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
+
+  const sorted = useMemo(() => {
+    const copy = [...entries]
+    copy.sort((a, b) => {
+      const va = a[sortKey]
+      const vb = b[sortKey]
+      let cmp = 0
+      if (typeof va === "string" && typeof vb === "string") cmp = va.localeCompare(vb)
+      else if (typeof va === "number" && typeof vb === "number") cmp = va - vb
+      cmp = sortDir === "asc" ? cmp : -cmp
+      if (cmp === 0 && sortKey !== "count") cmp = b.count - a.count
+      return cmp
+    })
+    return copy
+  }, [entries, sortKey, sortDir])
+
+  function toggle(k: keyof PokemonStat) {
+    if (k === sortKey) setSortDir(sortDir === "asc" ? "desc" : "asc")
+    else { setSortKey(k); setSortDir(k === "count" ? "desc" : "asc") }
+  }
+
+  return (
+    <details className="mb-3" ref={(el) => { if (el) refMap.set(name, el) }}>
+      <summary className="cursor-pointer text-lg font-semibold text-yellow-400 flex items-center gap-2">
+        <PkmImg name={name} index={pkmIndex[name]} size={36} />
+        {name}
+      </summary>
+      <div className="overflow-x-auto mt-2">
+        <table className="w-full text-sm whitespace-nowrap">
+          <thead>
+            <tr className="text-slate-500 border-b border-slate-700">
+              <SortTh sortKey="tier" currentKey={sortKey} currentDir={sortDir} onToggle={toggle} className="text-left pr-4">Tier</SortTh>
+              <SortTh sortKey="avg_rank" currentKey={sortKey} currentDir={sortDir} onToggle={toggle} className="text-right pr-4">Avg Rank</SortTh>
+              <SortTh sortKey="count" currentKey={sortKey} currentDir={sortDir} onToggle={toggle} className="text-right pr-4">Games</SortTh>
+              <th className="text-left py-1 text-slate-500 hidden md:table-cell">Items</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((s) => (
+              <tr key={s.tier} className="border-b border-slate-800 hover:bg-slate-800/50">
+                <td className="py-2 pr-4">{s.tier}</td>
+                <td className="text-right pr-4 tabular-nums">{s.avg_rank.toFixed(2)}</td>
+                <td className="text-right pr-4 tabular-nums text-slate-400">{s.count}</td>
+                <td className="py-2 text-xs text-slate-400 hidden md:table-cell">
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {s.items.slice(0, 8).map((item) => (
+                      <span key={item} className="flex items-center gap-1 mr-2">
+                        <ItemImg name={item} size={16} />
+                        {item}
+                      </span>
+                    )) || "—"}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  )
 }
 
 export default function PokemonPage() {
-  const [data, setData] = useState<Record<string, MergedPkm>>({})
+  const [stats, setStats] = useState<PokemonStat[]>([])
   const [pkmIndex, setPkmIndex] = useState<Record<string, string>>({})
   const [query, setQuery] = useState("")
-  const [selected, setSelected] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const detailsRefs = useRef<Map<string, HTMLDetailsElement>>(new Map())
 
   useEffect(() => {
     Promise.all([
       fetch("/api/pokemon").then((r) => r.json()),
       fetch("/assets/pkm-index.json").then((r) => r.json()),
-    ]).then(([d, idx]) => {
-      setData(d)
+    ]).then(([s, idx]) => {
+      setStats(s)
       setPkmIndex(idx)
     }).finally(() => setLoading(false))
   }, [])
 
-  const suggestions = useMemo(() => {
+  const filtered = useMemo(() => {
     if (!query.trim()) return []
-    const q = query.toUpperCase()
-    return Object.keys(data)
-      .filter((k) => k.includes(q))
-      .sort((a, b) => a.indexOf(q) - b.indexOf(q) || a.localeCompare(b))
-      .slice(0, 15)
-  }, [query, data])
+    const q = query.toUpperCase().replace(/ /g, "_")
+    return stats.filter((s) => s.pokemon.includes(q)).sort((a, b) => a.pokemon.localeCompare(b.pokemon)).slice(0, 50)
+  }, [query, stats])
 
-  if (loading) return <div className="text-slate-400">Loading data...</div>
+  const grouped = useMemo(() => {
+    const map = new Map<string, PokemonStat[]>()
+    for (const s of filtered) {
+      if (!map.has(s.pokemon)) map.set(s.pokemon, [])
+      map.get(s.pokemon)!.push(s)
+    }
+    return map
+  }, [filtered])
 
-  const pkm = selected ? data[selected] : null
+  if (loading) return <div className="text-slate-400">Loading...</div>
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Pokémon</h1>
-
-      <div className="relative mb-6">
-        <input
-          className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400"
-          placeholder="Search Pokémon..."
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); setSelected(null) }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && suggestions.length > 0) {
-              setSelected(suggestions[0])
-              setQuery(suggestions[0])
-            }
-          }}
+      <h1 className="text-2xl font-bold mb-4">Pokémon Stats</h1>
+      <input
+        className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 mb-6"
+        placeholder="Search Pokémon..."
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && grouped.size > 0) {
+            const first = [...grouped.keys()][0]
+            const el = detailsRefs.current.get(first)
+            if (el) el.open = !el.open
+          }
+        }}
+      />
+      {[...grouped.entries()].map(([name, entries]) => (
+        <PokemonGroup
+          key={name} name={name} entries={entries} pkmIndex={pkmIndex}
+          refMap={detailsRefs.current}
         />
-        {suggestions.length > 0 && !selected && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg max-h-60 overflow-y-auto z-10">
-            {suggestions.map((s) => (
-              <button key={s} className="w-full text-left px-4 py-2 hover:bg-slate-700 text-sm flex items-center gap-2"
-                onClick={() => { setSelected(s); setQuery(s) }}
-              >
-                <PkmImg name={s} index={pkmIndex[s]} size={32} />
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {pkm && (
-        <div>
-          <div className="flex items-center gap-3 mb-6">
-            <PkmImg name={pkm.pokemon} index={pkmIndex[pkm.pokemon]} size={56} />
-            <div>
-              <h2 className="text-2xl font-bold text-yellow-400">{pkm.pokemon}</h2>
-              <p className="text-sm text-slate-500">Items used on this Pokémon &mdash; ranked by global performance</p>
-            </div>
-          </div>
-
-          <h3 className="text-lg font-semibold mb-3">Items</h3>
-          <div className="overflow-x-auto mb-8">
-            <table className="w-full text-sm whitespace-nowrap">
-              <thead>
-                <tr className="text-slate-500 border-b border-slate-700">
-                  <th className="text-left py-2 pr-4">Item</th>
-                  <th className="text-right py-2 pr-4">Global Rank</th>
-                  <th className="text-right py-2 pr-4">Games</th>
-                  <th className="text-left py-2">Tiers</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(pkm.items)
-                  .filter(([, v]) => v.avg_rank > 0)
-                  .sort((a, b) => a[1].avg_rank - b[1].avg_rank || b[1].games - a[1].games)
-                  .map(([item, info]) => (
-                    <tr key={item} className="border-b border-slate-800 hover:bg-slate-800/50">
-                      <td className="py-2 pr-4 font-medium flex items-center gap-2">
-                        <ItemImg name={item} size={24} />
-                        {item}
-                      </td>
-                      <td className="text-right pr-4 tabular-nums">{info.avg_rank.toFixed(2)}</td>
-                      <td className="text-right pr-4 tabular-nums text-slate-400">{info.games}</td>
-                      <td className="py-2 text-xs text-slate-500">{[...new Set(info.tiers)].sort().join(", ")}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-
-          <h3 className="text-lg font-semibold mb-3">Per-tier stats</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm whitespace-nowrap">
-              <thead>
-                <tr className="text-slate-500 border-b border-slate-700">
-                  <th className="text-left py-2 pr-4">Tier</th>
-                  <th className="text-right py-2 pr-4">Avg Rank</th>
-                  <th className="text-right py-2 pr-4">Games</th>
-                  <th className="text-left py-2">Items</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(pkm.tiers)
-                  .filter(([, t]) => t.games > 0 && t.avg_rank > 0)
-                  .sort((a, b) => a[1].avg_rank - b[1].avg_rank)
-                  .map(([tier, info]) => (
-                    <tr key={tier} className="border-b border-slate-800 hover:bg-slate-800/50">
-                      <td className="py-2 pr-4">{tier}</td>
-                      <td className="text-right pr-4 tabular-nums">{info.avg_rank.toFixed(2)}</td>
-                      <td className="text-right pr-4 tabular-nums text-slate-400">{info.games}</td>
-                      <td className="py-2 text-xs text-slate-400 flex items-center gap-1 flex-wrap">
-                        {info.items.slice(0, 6).map((item) => (
-                          <span key={item} className="flex items-center gap-1 mr-2">
-                            <ItemImg name={item} size={16} />
-                            {item}
-                          </span>
-                        ))}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      ))}
+      {query && filtered.length === 0 && <p className="text-slate-500">No matches.</p>}
     </div>
   )
 }
