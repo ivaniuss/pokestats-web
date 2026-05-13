@@ -1,6 +1,6 @@
 import { fetchPokemonStats } from "@/lib/api"
+import { cachedResponse } from "@/lib/cache"
 
 export async function GET() {
-  const data = await fetchPokemonStats()
-  return Response.json(data)
+  return cachedResponse(await fetchPokemonStats())
 }

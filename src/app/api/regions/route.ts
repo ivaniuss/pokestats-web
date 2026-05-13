@@ -1,6 +1,6 @@
 import { fetchRegions } from "@/lib/api"
+import { cachedResponse } from "@/lib/cache"
 
 export async function GET() {
-  const data = await fetchRegions()
-  return Response.json(data)
+  return cachedResponse(await fetchRegions())
 }

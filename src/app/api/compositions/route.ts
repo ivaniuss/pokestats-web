@@ -1,6 +1,6 @@
 import { fetchCompositions } from "@/lib/api"
+import { cachedResponse } from "@/lib/cache"
 
 export async function GET() {
-  const data = await fetchCompositions()
-  return Response.json(data)
+  return cachedResponse(await fetchCompositions())
 }
