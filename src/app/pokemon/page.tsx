@@ -109,6 +109,7 @@ export default function PokemonPage() {
         placeholder="Search Pokémon..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
       />
       {[...grouped.entries()].map(([name, entries]) => (
         <PokemonGroup key={name} name={name} entries={entries} pkmIndex={pkmIndex} />
