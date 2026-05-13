@@ -33,7 +33,7 @@ export default function TopItemsPage() {
       map.set(s.item, e)
     }
     return [...map.entries()]
-      .filter(([, v]) => v.count >= minCount && v.count > 0)
+      .filter(([, v]) => v.count >= minCount && v.count > 0 && v.rankSum > 0)
       .map(([item, v]) => ({
         item,
         tier: "ALL" as const,
