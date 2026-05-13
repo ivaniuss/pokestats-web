@@ -86,7 +86,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </Link>
               ))}
               <button onClick={() => setHelp("pages")} className="text-slate-500 hover:text-white text-lg leading-none" title="Help">?</button>
-              <button onClick={() => setLang({ en: "es", es: "pt", pt: "en" }[lang] as "en" | "es" | "pt")} className="text-xs text-slate-500 hover:text-white uppercase font-bold">{LANG[lang]}</button>
             </div>
 
             <button className="md:hidden text-slate-300 text-xl" onClick={() => setMenuOpen(!menuOpen)}>
@@ -105,9 +104,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <button onClick={() => { setHelp("pages"); setMenuOpen(false) }}
                 className="block py-1.5 text-sm text-slate-500 hover:text-white w-full text-left"
               >Help</button>
-              <button onClick={() => setLang({ en: "es", es: "pt", pt: "en" }[lang] as "en" | "es" | "pt")}
-                className="block py-1.5 text-sm text-slate-500 hover:text-white w-full text-left uppercase font-bold"
-              >{LANG[lang]}</button>
             </div>
           )}
         </nav>
@@ -127,7 +123,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     className={`px-3 py-1 rounded text-xs ${help === k ? "bg-yellow-500 text-black" : "bg-slate-700 text-slate-300 hover:bg-slate-600"}`}
                   >{v[lang].title}</button>
                 ))}
-                <button onClick={() => setHelp(null)} className="px-3 py-1 rounded text-xs bg-slate-700 text-slate-300 hover:bg-slate-600 ml-auto">Close</button>
+                <button onClick={() => setLang({ en: "es", es: "pt", pt: "en" }[lang] as "en" | "es" | "pt")}
+                  className="px-3 py-1 rounded text-xs bg-slate-700 text-slate-300 hover:bg-slate-600"
+                >{LANG[lang]}</button>
+                <button onClick={() => setHelp(null)} className="px-3 py-1 rounded text-xs bg-slate-700 text-slate-300 hover:bg-slate-600">Close</button>
               </div>
             </div>
           </div>
