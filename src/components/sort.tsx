@@ -2,7 +2,12 @@ import { useState, useMemo } from "react"
 
 export type SortDir = "asc" | "desc"
 
-export function useSort<T>(items: T[], defaultKey: keyof T, defaultDir: SortDir = "asc") {
+export function useSort<T extends Record<string, any>>(
+  items: T[],
+  defaultKey: keyof T,
+  defaultDir: SortDir = "asc",
+  secondary?: { key: keyof T; dir: SortDir }
+) {
   const [key, setKey] = useState(defaultKey)
   const [dir, setDir] = useState<SortDir>(defaultDir)
 
@@ -14,10 +19,19 @@ export function useSort<T>(items: T[], defaultKey: keyof T, defaultDir: SortDir 
       let cmp = 0
       if (typeof va === "string" && typeof vb === "string") cmp = va.localeCompare(vb)
       else if (typeof va === "number" && typeof vb === "number") cmp = va - vb
-      return dir === "asc" ? cmp : -cmp
+      cmp = dir === "asc" ? cmp : -cmp
+
+      if (cmp === 0 && secondary) {
+        const sa = a[secondary.key]
+        const sb = b[secondary.key]
+        if (typeof sa === "number" && typeof sb === "number") {
+          cmp = secondary.dir === "asc" ? sa - sb : sb - sa
+        }
+      }
+      return cmp
     })
     return copy
-  }, [items, key, dir])
+  }, [items, key, dir, secondary])
 
   function toggle(k: keyof T) {
     if (k === key) setDir(dir === "asc" ? "desc" : "asc")

@@ -8,7 +8,7 @@ import { useSort, SortTh } from "@/components/sort"
 export default function TopItemsPage() {
   const [stats, setStats] = useState<ItemStat[]>([])
   const [tier, setTier] = useState("ALL")
-  const [minCount, setMinCount] = useState(500)
+  const [minCount, setMinCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function TopItemsPage() {
       }))
   }, [stats, tier, minCount])
 
-  const { sorted, toggle, key, dir } = useSort(aggregated, "avg_rank", "asc")
+  const { sorted, toggle, key, dir } = useSort(aggregated, "avg_rank", "asc", { key: "count", dir: "desc" })
 
   if (loading) return <div className="text-slate-400">Loading...</div>
 

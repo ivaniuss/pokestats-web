@@ -21,7 +21,7 @@ export default function CompositionsPage() {
     }).finally(() => setLoading(false))
   }, [])
 
-  const { sorted, toggle, key, dir } = useSort(data, "mean_rank", "asc")
+  const { sorted, toggle, key, dir } = useSort(data, "mean_rank", "asc", { key: "count", dir: "desc" })
 
   if (loading) return <div className="text-slate-400">Loading...</div>
 

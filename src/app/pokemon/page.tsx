@@ -17,14 +17,16 @@ function PokemonGroup({ name, entries, pkmIndex, refMap }: { name: string; entri
       let cmp = 0
       if (typeof va === "string" && typeof vb === "string") cmp = va.localeCompare(vb)
       else if (typeof va === "number" && typeof vb === "number") cmp = va - vb
-      return sortDir === "asc" ? cmp : -cmp
+      cmp = sortDir === "asc" ? cmp : -cmp
+      if (cmp === 0 && sortKey !== "count") cmp = b.count - a.count
+      return cmp
     })
     return copy
   }, [entries, sortKey, sortDir])
 
   function toggle(k: keyof PokemonStat) {
     if (k === sortKey) setSortDir(sortDir === "asc" ? "desc" : "asc")
-    else { setSortKey(k); setSortDir("asc") }
+    else { setSortKey(k); setSortDir(k === "count" ? "desc" : "asc") }
   }
 
   return (

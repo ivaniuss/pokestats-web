@@ -9,7 +9,7 @@ export default function TopPokemonPage() {
   const [stats, setStats] = useState<PokemonStat[]>([])
   const [pkmIndex, setPkmIndex] = useState<Record<string, string>>({})
   const [tier, setTier] = useState("ALL")
-  const [minCount, setMinCount] = useState(500)
+  const [minCount, setMinCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function TopPokemonPage() {
       }))
   }, [stats, tier, minCount])
 
-  const { sorted, toggle, key, dir } = useSort(aggregated, "avg_rank", "asc")
+  const { sorted, toggle, key, dir } = useSort(aggregated, "avg_rank", "asc", { key: "count", dir: "desc" })
 
   if (loading) return <div className="text-slate-400">Loading...</div>
 

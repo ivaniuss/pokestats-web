@@ -12,7 +12,7 @@ export default function RegionsPage() {
     fetch("/api/regions").then((r) => r.json()).then(setData).finally(() => setLoading(false))
   }, [])
 
-  const { sorted, toggle, key, dir } = useSort(data, "rank", "asc")
+  const { sorted, toggle, key, dir } = useSort(data, "rank", "asc", { key: "count", dir: "desc" })
 
   if (loading) return <div className="text-slate-400">Loading...</div>
 
