@@ -1,46 +1,46 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import "./globals.css"
 
 const TIER_INFO = [
-  { tier: "LEVEL_BALL", elo: "0", label: "Bronce" },
-  { tier: "NET_BALL", elo: "1050", label: "" },
-  { tier: "SAFARI_BALL", elo: "1100", label: "" },
-  { tier: "LOVE_BALL", elo: "1150", label: "" },
-  { tier: "PREMIER_BALL", elo: "1200", label: "" },
-  { tier: "QUICK_BALL", elo: "1250", label: "" },
-  { tier: "POKE_BALL", elo: "1300", label: "" },
-  { tier: "SUPER_BALL", elo: "1350", label: "" },
-  { tier: "ULTRA_BALL", elo: "1400", label: "" },
-  { tier: "MASTER_BALL", elo: "1500", label: "" },
-  { tier: "BEAST_BALL", elo: "1600", label: "Máximo" },
+  { tier: "LEVEL_BALL", elo: "0" },
+  { tier: "NET_BALL", elo: "1050" },
+  { tier: "SAFARI_BALL", elo: "1100" },
+  { tier: "LOVE_BALL", elo: "1150" },
+  { tier: "PREMIER_BALL", elo: "1200" },
+  { tier: "QUICK_BALL", elo: "1250" },
+  { tier: "POKE_BALL", elo: "1300" },
+  { tier: "SUPER_BALL", elo: "1350" },
+  { tier: "ULTRA_BALL", elo: "1400" },
+  { tier: "MASTER_BALL", elo: "1500" },
+  { tier: "BEAST_BALL", elo: "1600" },
 ]
 
 const HELP = {
   tiers: {
     title: "Rank Tiers",
-    body: `Los tiers ordenan a los jugadores por su ELO (puntuación de ranking). Cuanto más alto el tier, mejores jugadores.
-${TIER_INFO.map((t) => `  • ${t.tier} — ${t.elo} ELO${t.label ? ` (${t.label})` : ""}`).join("\n")}
-BEAST_BALL es el rango más alto, LEVEL_BALL el más bajo.`,
+    body: `Tiers group players by ELO (ranking score). Higher tier = better players.
+${TIER_INFO.map((t) => `  ${t.tier} — ${t.elo} ELO`).join("\n")}
+BEAST_BALL is the highest rank, LEVEL_BALL the lowest.`,
   },
   avg_rank: {
     title: "Average Rank (Avg Rank)",
-    body: "Es el puesto promedio en que terminan los jugadores cuando usan ese Pokémon/item/composición. Son 8 jugadores por partida, 1° es el mejor, 8° el peor. Un avg_rank de 2.50 significa que en promedio quedan 2° o 3°.",
+    body: "The average finishing position of players using that Pokémon/item/composition. 8 players per game, 1st is best, 8th is worst. An avg_rank of 2.50 means they place around 2nd-3rd on average.",
   },
   count: {
     title: "Count",
-    body: "Cantidad de partidas registradas con ese dato. Mientras más alto, más representativo. Recomendamos ignorar datos con count bajo (ej: < 100) porque pueden ser engañosos.",
+    body: "Number of recorded games with this data point. Higher count = more statistically significant. Low counts (e.g. < 100) can be misleading — a single lucky game can skew the average.",
   },
   pages: {
     title: "Pages",
-    body: `• Best Items — Buscá un Pokémon y vê los mejores items para usarlo, ordenados por rendimiento.
-• Pokémon — Stats de cada Pokémon separado por tier de ranking.
-• Top Pokémon — Los Pokémon con mejor avg_rank, filtrable por tier.
-• Top Items — Los items con mejor avg_rank, filtrable por tier.
-• Compositions — Composiciones de equipo ganadoras del meta.
-• Regions — Rendimiento de cada región del juego.`,
+    body: `• Best Items — Search a Pokémon and see the best items to use on it, ranked by performance across tiers.
+• Pokémon — Stats per Pokémon broken down by rank tier.
+• Top Pokémon — Highest performing Pokémon by average rank, filterable by tier.
+• Top Items — Highest performing items by average rank, filterable by tier.
+• Compositions — Winning team compositions from the current meta.
+• Regions — Performance data for each game region.`,
   },
 }
 
@@ -57,6 +57,12 @@ const nav = [
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [help, setHelp] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (help) document.body.style.overflow = "hidden"
+    else document.body.style.overflow = ""
+    return () => { document.body.style.overflow = "" }
+  }, [help])
 
   return (
     <html lang="en">
