@@ -40,7 +40,7 @@ export default function TopPokemonPage() {
       map.set(s.pokemon, e)
     }
     return [...map.entries()]
-      .filter(([, v]) => v.count >= minCount)
+      .filter(([, v]) => v.count >= minCount && v.count > 0)
       .map(([pokemon, v]) => ({
         pokemon,
         tier: "ALL" as const,

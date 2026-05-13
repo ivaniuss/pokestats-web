@@ -131,9 +131,11 @@ function aggregateItems(items: ItemEntry[]) {
     e.tiers.add(i.tier)
     map.set(i.item, e)
   }
-  return [...map.entries()].map(([item, v]) => ({
-    item, avg_rank: +(v.rankSum / v.count).toFixed(2), count: v.count, tiers: [...v.tiers].sort().join(", "),
-  }))
+  return [...map.entries()]
+    .filter(([, v]) => v.count > 0)
+    .map(([item, v]) => ({
+      item, avg_rank: +(v.rankSum / v.count).toFixed(2), count: v.count, tiers: [...v.tiers].sort().join(", "),
+    }))
 }
 
 function ItemsTable({ items, sortKey, sortAsc, onSort, minCount }: {
@@ -141,7 +143,7 @@ function ItemsTable({ items, sortKey, sortAsc, onSort, minCount }: {
   sortKey: SortKey; sortAsc: boolean; onSort: (k: SortKey) => void; minCount: number
 }) {
   const filtered = useMemo(() => {
-    const f = items.filter((i) => i.count >= minCount)
+    const f = items.filter((i) => i.count >= minCount && !isNaN(i.avg_rank))
     f.sort((a, b) => {
       let cmp: number
       if (sortKey === "item") cmp = a.item.localeCompare(b.item)
