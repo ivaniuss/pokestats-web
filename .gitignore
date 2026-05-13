@@ -1,0 +1,9 @@
+node_modules/
+.next/
+*.tsbuildinfo
+next-env.d.ts
+
+# synced assets (run `pnpm sync-assets` to generate)
+/public/assets/pokemons/
+/public/assets/items/
+/public/assets/portraits/
