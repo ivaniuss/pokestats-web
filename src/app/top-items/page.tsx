@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import type { ItemStat } from "@/lib/api"
 import { ItemImg } from "@/components/pkm-img"
+import { useSort, SortTh } from "@/components/sort"
 
 export default function TopItemsPage() {
   const [stats, setStats] = useState<ItemStat[]>([])
@@ -19,9 +20,10 @@ export default function TopItemsPage() {
   }, [stats])
 
   const filtered = useMemo(() => {
-    const f = tier === "ALL" ? stats : stats.filter((s) => s.tier === tier)
-    return f.sort((a, b) => a.avg_rank - b.avg_rank || b.count - a.count).slice(0, 30)
+    return tier === "ALL" ? stats : stats.filter((s) => s.tier === tier)
   }, [stats, tier])
+
+  const { sorted, toggle, key, dir } = useSort(filtered, "avg_rank", "asc")
 
   if (loading) return <div className="text-slate-400">Loading...</div>
 
@@ -35,35 +37,35 @@ export default function TopItemsPage() {
           >{t}</button>
         ))}
       </div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-slate-500 border-b border-slate-700">
-            <th className="text-left py-2 pr-4">#</th>
-            <th className="text-left py-2 pr-4">Item</th>
-            <th className="text-left py-2 pr-4">Tier</th>
-            <th className="text-right py-2 pr-4">Avg Rank</th>
-            <th className="text-right py-2 pr-4">Count</th>
-            <th className="text-left py-2">Pokémon</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.map((s, i) => (
-            <tr key={`${s.item}-${s.tier}`} className="border-b border-slate-800 hover:bg-slate-800/50">
-              <td className="py-2 pr-4 text-slate-500">{i + 1}</td>
-              <td className="py-2 pr-4 font-medium flex items-center gap-2">
-                <ItemImg name={s.item} size={24} />
-                {s.item}
-              </td>
-              <td className="py-2 pr-4 text-slate-400">{s.tier}</td>
-              <td className="text-right pr-4 tabular-nums">{s.avg_rank.toFixed(2)}</td>
-              <td className="text-right pr-4 tabular-nums text-slate-400">{s.count}</td>
-              <td className="py-2 text-xs text-slate-500">{s.pokemons.slice(0, 4).join(", ") || "—"}</td>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm whitespace-nowrap">
+          <thead>
+            <tr className="border-b border-slate-700">
+              <th className="text-left py-2 pr-4 text-slate-500">#</th>
+              <SortTh sortKey="item" currentKey={key} currentDir={dir} onToggle={toggle} className="text-left pr-4">Item</SortTh>
+              <th className="text-left py-2 pr-4 text-slate-500">Tier</th>
+              <SortTh sortKey="avg_rank" currentKey={key} currentDir={dir} onToggle={toggle} className="text-right pr-4">Avg Rank</SortTh>
+              <SortTh sortKey="count" currentKey={key} currentDir={dir} onToggle={toggle} className="text-right pr-4">Count</SortTh>
+              <th className="text-left py-2 text-slate-500 hidden md:table-cell">Pokémon</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sorted.slice(0, 50).map((s, i) => (
+              <tr key={`${s.item}-${s.tier}`} className="border-b border-slate-800 hover:bg-slate-800/50">
+                <td className="py-2 pr-4 text-slate-500">{i + 1}</td>
+                <td className="py-2 pr-4 font-medium flex items-center gap-2">
+                  <ItemImg name={s.item} size={24} />
+                  {s.item}
+                </td>
+                <td className="py-2 pr-4 text-slate-400">{s.tier}</td>
+                <td className="text-right pr-4 tabular-nums">{s.avg_rank.toFixed(2)}</td>
+                <td className="text-right pr-4 tabular-nums text-slate-400">{s.count}</td>
+                <td className="py-2 text-xs text-slate-500 hidden md:table-cell">{s.pokemons.slice(0, 4).join(", ") || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
-
-
