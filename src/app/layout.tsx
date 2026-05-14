@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 
 const LANG = {
@@ -136,6 +137,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         )}
+        <Analytics />
       </body>
     </html>
   )
