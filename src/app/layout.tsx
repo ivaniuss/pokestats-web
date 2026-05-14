@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 
 const LANG = {
@@ -109,8 +108,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </nav>
 
         <main className="max-w-6xl mx-auto px-4 py-4 md:py-6">{children}</main>
-
-        <Analytics />
 
         {help && (
           <div className="fixed inset-0 z-30 bg-black/60 flex items-center justify-center p-4" onClick={() => setHelp(null)}>
