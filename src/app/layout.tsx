@@ -25,7 +25,7 @@ export const metadata: Metadata = {
       "Live meta data for Pokémon Auto Chess. Analyze stats per Pokémon, find best items, explore winning team compositions, and track performance across all rank tiers.",
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: "/icon.svg",
   },
 }
 
