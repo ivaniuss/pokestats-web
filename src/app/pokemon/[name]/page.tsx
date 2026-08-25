@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { fetchPokemonStats, fetchPokemonItemRecs, type PokemonStat } from "@/lib/api"
 import { PkmImg, ItemImg } from "@/components/pkm-img"
 import { pkmIndex } from "@/lib/pkm-index"
+import { getEvolutionInfo, getPreEvolution, getRelatedForms } from "@/lib/evolutions"
 
 interface PageProps {
   params: Promise<{ name: string }>
@@ -43,6 +44,10 @@ export default async function PokemonDetailPage({ params }: PageProps) {
   const avgRank = entries.reduce((acc, e) => acc + e.avg_rank * e.count, 0) / (totalCount || 1)
   const recommended = (recs[name] ?? []).slice(0, 8)
 
+  const evo = getEvolutionInfo(name)
+  const preEvo = getPreEvolution(name)
+  const related = getRelatedForms(name).filter((r) => r !== evo?.to && r !== preEvo?.from)
+
   return (
     <div>
       <Link href="/pokemon" className="text-sm text-slate-400 hover:text-white">&larr; All Pokémon</Link>
@@ -55,6 +60,32 @@ export default async function PokemonDetailPage({ params }: PageProps) {
           </p>
         </div>
       </div>
+
+      {evo && (
+        <div className="mb-6 border border-yellow-500/30 bg-yellow-500/10 rounded-xl p-3 flex items-center gap-3">
+          <ItemImg name={evo.item} size={28} />
+          <p className="text-sm">
+            <span className="text-slate-300">Evolves to</span>{" "}
+            <Link href={`/pokemon/${evo.to.toLowerCase()}`} className="font-semibold text-yellow-400 hover:text-yellow-300">
+              {evo.to}
+            </Link>{" "}
+            <span className="text-slate-400">with</span> <span className="font-medium text-white">{evo.item}</span>
+            <span className="text-slate-500"> — equip it on {name} to transform in battle</span>
+          </p>
+        </div>
+      )}
+      {preEvo && (
+        <div className="mb-6 border border-slate-700 bg-slate-800/50 rounded-xl p-3 flex items-center gap-3">
+          <PkmImg name={preEvo.from} index={pkmIndex[preEvo.from]} size={28} />
+          <p className="text-sm text-slate-300">
+            Evolves from{" "}
+            <Link href={`/pokemon/${preEvo.from.toLowerCase()}`} className="font-semibold text-yellow-400 hover:text-yellow-300">
+              {preEvo.from}
+            </Link>{" "}
+            <span className="text-slate-500">with {preEvo.item}</span>
+          </p>
+        </div>
+      )}
 
       <h2 className="text-lg font-semibold mb-2">Stats by rank tier</h2>
       <div className="overflow-x-auto mb-8">
@@ -99,6 +130,24 @@ export default async function PokemonDetailPage({ params }: PageProps) {
         </div>
       ) : (
         <p className="text-slate-500 text-sm">No item recommendations recorded.</p>
+      )}
+
+      {related.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-2">Related forms</h2>
+          <div className="flex flex-wrap gap-2">
+            {related.map((r) => (
+              <Link
+                key={r}
+                href={`/pokemon/${r.toLowerCase()}`}
+                className="flex items-center gap-2 border border-slate-700 rounded-lg px-3 py-2 hover:border-yellow-500/50 hover:bg-slate-800/50"
+              >
+                <PkmImg name={r} index={pkmIndex[r]} size={24} />
+                <span className="text-sm text-slate-300">{r}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )

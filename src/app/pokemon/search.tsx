@@ -6,6 +6,7 @@ import type { PokemonStat } from "@/lib/api"
 import { PkmImg, ItemImg } from "@/components/pkm-img"
 import { SortTh } from "@/components/sort"
 import { pkmIndex } from "@/lib/pkm-index"
+import { getEvolutionInfo } from "@/lib/evolutions"
 
 type GroupSortKey = Extract<keyof PokemonStat, "tier" | "avg_rank" | "count">
 
@@ -37,6 +38,8 @@ function PokemonGroup({ name, entries, registerRef }: {
     else { setSortKey(k); setSortDir(k === "count" ? "desc" : "asc") }
   }
 
+  const evo = getEvolutionInfo(name)
+
   return (
     <div className="mb-3 flex items-start gap-2">
       <details className="flex-1" ref={(el) => registerRef(name, el)}>
@@ -44,6 +47,14 @@ function PokemonGroup({ name, entries, registerRef }: {
           <PkmImg name={name} index={pkmIndex[name]} size={36} />
           {name}
         </summary>
+        {evo && (
+          <div className="mt-2 mb-2 flex items-center gap-2 text-xs border border-yellow-500/20 bg-yellow-500/10 rounded-lg px-2 py-1">
+            <ItemImg name={evo.item} size={16} />
+            <span className="text-slate-300">
+              Evolves to <Link href={`/pokemon/${evo.to.toLowerCase()}`} className="text-yellow-400 hover:underline">{evo.to}</Link> with {evo.item}
+            </span>
+          </div>
+        )}
       <div className="overflow-x-auto mt-2">
         <table className="w-full text-sm whitespace-nowrap">
           <thead>
