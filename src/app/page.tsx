@@ -7,6 +7,7 @@ export default function Home() {
     { href: "/top-pokemon", title: "Top Pokémon", desc: "Highest performing Pokémon by average rank" },
     { href: "/top-items", title: "Top Items", desc: "Highest performing items by average rank" },
     { href: "/compositions", title: "Compositions", desc: "Winning team compositions from the meta" },
+    { href: "/regions", title: "Regions", desc: "Performance stats grouped by player region" },
   ]
   return (
     <div>

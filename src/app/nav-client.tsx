@@ -4,12 +4,6 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Analytics } from "@vercel/analytics/next"
 
-const LANG = {
-  en: "EN",
-  es: "ES",
-  pt: "PT",
-}
-
 const TIER_INFO = [
   { tier: "LEVEL_BALL", elo: "0" },
   { tier: "NET_BALL", elo: "1050" },
@@ -55,6 +49,7 @@ const nav = [
   { href: "/top-pokemon", label: "Top Pokémon" },
   { href: "/top-items", label: "Top Items" },
   { href: "/compositions", label: "Compositions" },
+  { href: "/regions", label: "Regions" },
   { href: "/contact", label: "Contact" },
 ]
 

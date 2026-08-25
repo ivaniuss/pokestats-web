@@ -1,36 +1,135 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PokéStats
+
+Live statistics and meta dashboard for [Pokémon Auto Chess](https://pokemon-auto-chess.com) — an auto-battler game. PokéStats aggregates upstream match metadata and surfaces it as browsable tables and charts: per-Pokémon performance, item recommendations, top performers by rank tier, clustered team compositions, and regional stats.
+
+**Production:** https://pokestats.gg
+
+## Tech Stack
+
+| Tool | Purpose |
+| --- | --- |
+| [Next.js](https://nextjs.org) 16 (App Router) | Framework, routing, API routes |
+| React 19 | UI |
+| TypeScript | Type safety |
+| Tailwind CSS v4 | Styling |
+| Vercel Analytics | Usage tracking |
+| pnpm | Package manager |
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Other scripts:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm build        # production build
+pnpm start        # serve production build
+pnpm lint         # eslint
+pnpm test         # vitest (unit tests)
+pnpm sync:assets  # re-sync sprites + pkm-index.json from the game source
+```
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+### Data flow
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+pokemon-auto-chess.com (upstream API)
+        │  fetched at build/ISR time via src/lib/api.ts
+        │  two cache layers: in-memory Map (1h TTL, per instance)
+        │  + disk cache in node_modules/.cache (shared across build workers;
+        │     upstream payloads exceed Next.js's 2MB Data Cache limit)
+        ▼
+src/lib/api.ts ── reshapes raw payloads into typed models
+        │
+        ▼
+Server Components (async pages) ── statically prerendered, ISR revalidate 3600
+        │  props
+        ▼
+Small client components ── filters, sorting, search (interactivity only)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Upstream client** (`src/lib/api.ts`): single entry point for all upstream calls (`/meta/pokemons`, `/meta/items`, `/meta-v2`, `/meta/regions`). Caches responses in memory for one hour per server instance, plus a disk cache under `node_modules/.cache` so parallel build workers don't each re-download the large payloads. Maps raw JSON into typed interfaces (`PokemonStat`, `ItemStat`, `Composition`, `Region`).
+- **Pages** are async Server Components that call `api.ts` directly and export `revalidate = 3600` (ISR). They render full HTML with data baked in — no client-side fetch waterfall.
+- **API routes** (`src/app/api/*/route.ts`) remain available as a public JSON contract: thin GET handlers that delegate to `api.ts`, wrap results with `cachedResponse()` (`src/lib/cache.ts`, `Cache-Control: s-maxage=3600`) and return 502 on upstream failure.
+- **Error handling**: root `error.tsx` boundary with retry, `not-found.tsx`, and a streaming skeleton via `loading.tsx`.
 
-## Deploy on Vercel
+### Assets
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Pokémon portraits and item sprites are **self-hosted** under `public/assets/` instead of proxied from the game's website:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm sync:assets            # incremental; add --force to re-download everything
+```
+
+The script:
+1. Regenerates `public/assets/pkm-index.json` (name → sprite ID) from [`pokemons-data.csv`](https://github.com/keldaanCommunity/pokemonAutoChess/blob/master/app/models/precomputed/pokemons-data.csv) in the game repo — run it when new Pokémon are released.
+2. Downloads every portrait (`Normal` emotion) and item sprite used by the site into `public/assets/portraits|item/`.
+
+A handful of sprites legitimately 404 upstream (some regional variants, HM items); `PkmImg`'s `onError` falls back to the MissingNo placeholder, and Pokémon missing from a not-yet-synced index render the same placeholder instead of disappearing.
+
+**Automation:** game stats are always live (fetched from the upstream API on each hourly revalidation), so they never go stale. Sprites only change when the game ships new content — a scheduled GitHub Action (`.github/workflows/sync-assets.yml`) runs `sync:assets` daily and auto-commits when there are changes, which also triggers a fresh Vercel deployment. You can also run it manually anytime:
+
+```bash
+pnpm sync:assets            # incremental; add --force to re-download everything
+```
+
+### Pages
+
+| Route | Description |
+| --- | --- |
+| `/` | Home — card grid linking to each section |
+| `/best-items` | Best items overall, with filtering |
+| `/pokemon` | Searchable per-Pokémon stats grouped by tier |
+| `/pokemon/[name]` | Detail page per Pokémon: tier stats + best items (statically generated, linked from sitemap) |
+| `/top-pokemon` | Top performers by ELO tier (LEVEL_BALL → BEAST_BALL) |
+| `/top-items` | Top items by usage and average rank |
+| `/compositions` | Clustered team compositions with winrates |
+| `/regions` | Stats per region |
+| `/contact` | Contact form (Formspree) |
+
+Each page has a sibling `layout.tsx` that only exists to export per-page SEO metadata.
+
+### Shared components & utilities
+
+- `src/components/pkm-img.tsx` — Pokémon/item portraits resolved via `public/assets/pkm-index.json` (name → sprite ID), with `onError` fallbacks.
+- `src/components/sort.tsx` — `useSort` hook plus a `<SortTh>` sortable table header.
+- `src/app/nav-client.tsx` — sticky nav shell with mobile menu and trilingual (EN/ES/PT) help modal.
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── layout.tsx          # root layout + global SEO metadata
+│   ├── page.tsx            # home
+│   ├── error.tsx           # global error boundary (retry)
+│   ├── not-found.tsx       # 404 UI
+│   ├── loading.tsx         # streaming skeleton
+│   ├── nav-client.tsx      # nav / mobile menu / help modal
+│   ├── sitemap.ts          # sitemap incl. per-Pokémon URLs
+│   ├── robots.ts           # robots.txt
+│   ├── api/                # route handlers — public JSON contract
+│   └── <page>/             # page.tsx (server) + client view components
+├── components/             # shared UI components
+└── lib/                    # api.ts (upstream client), pkm-index.ts
+scripts/
+└── sync-assets.mjs         # sprite + index sync from the game repo
+```
+
+## Testing & CI
+
+Unit tests (Vitest) cover the upstream response shaping in `src/lib/api.test.ts`. GitHub Actions runs lint + tests + build on every push/PR (`.github/workflows/ci.yml`).
+
+## Deployment
+
+Deployed on Vercel. Pushing to the main branch triggers a deployment; pages are statically prerendered and revalidated hourly (ISR), while API responses are edge-cached via the `Cache-Control` headers described above.
+
+## Notes for Contributors
+
+> ⚠️ This project uses a recent Next.js release with breaking changes relative to older versions. Consult the bundled docs in `node_modules/next/dist/docs/` before writing code against Next.js APIs.

@@ -1,19 +1,14 @@
-const BASE = "/api/assets?path="
+"use client"
 
-function assetUrl(path: string) {
-  return BASE + encodeURIComponent(path)
-}
-
-export function pkmImgSrc(index: string, emotion = "Normal") {
+function pkmImgSrc(index: string, emotion = "Normal") {
   const parts = index.split("-")
-  return assetUrl(`/assets/portraits/${parts.join("/")}/${emotion}.png`)
+  return `/assets/portraits/${parts.join("/")}/${emotion}.png`
 }
 
 export function PkmImg({ name, index, size = 40 }: { name: string; index?: string; size?: number }) {
-  if (!index) return null
   return (
     <img
-      src={pkmImgSrc(index)}
+      src={pkmImgSrc(index ?? "0000")}
       alt={name}
       width={size}
       height={size}
@@ -33,7 +28,7 @@ export function PkmImg({ name, index, size = 40 }: { name: string; index?: strin
 export function ItemImg({ name, size = 24 }: { name: string; size?: number }) {
   return (
     <img
-      src={assetUrl(`/assets/item/${name}.png`)}
+      src={`/assets/item/${name}.png`}
       alt={name}
       width={size}
       height={size}

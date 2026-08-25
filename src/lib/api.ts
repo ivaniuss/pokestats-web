@@ -1,19 +1,59 @@
-const BASE = "https://pokemon-auto-chess.com"
-const CACHE_TTL = 3600_000 // 1 hour in ms
-const cache = new Map<string, { data: unknown; ts: number }>()
+import path from "node:path"
+import fs from "node:fs/promises"
+
+export const UPSTREAM_BASE = "https://pokemon-auto-chess.com"
+
+const CACHE_TTL_MS = 3600_000
+
+const DISK_CACHE_ENABLED = !process.env.VITEST
+
+const memory = new Map<string, { data: unknown; ts: number }>()
+
+function diskCachePath(endpoint: string) {
+  const safe = endpoint.replace(/[^a-z0-9]+/gi, "-")
+  return path.join("node_modules", ".cache", "pokestats", `${safe}.json`)
+}
+
+async function readDiskCache(endpoint: string): Promise<unknown | undefined> {
+  if (!DISK_CACHE_ENABLED) return undefined
+  try {
+    const stat = await fs.stat(diskCachePath(endpoint))
+    if (Date.now() - stat.mtimeMs < CACHE_TTL_MS) {
+      return JSON.parse(await fs.readFile(diskCachePath(endpoint), "utf8"))
+    }
+  } catch {
+    /* no cached copy */
+  }
+  return undefined
+}
+
+async function writeDiskCache(endpoint: string, data: unknown) {
+  if (!DISK_CACHE_ENABLED) return
+  try {
+    const p = diskCachePath(endpoint)
+    await fs.mkdir(path.dirname(p), { recursive: true })
+    await fs.writeFile(p, JSON.stringify(data))
+  } catch {
+    /* read-only fs: skip */
+  }
+}
 
 async function fetchJSON<T>(endpoint: string): Promise<T> {
-  const cached = cache.get(endpoint)
-  if (cached && Date.now() - cached.ts < CACHE_TTL) {
-    return cached.data as T
+  const mem = memory.get(endpoint)
+  if (mem && Date.now() - mem.ts < CACHE_TTL_MS) return mem.data as T
+  const disk = await readDiskCache(endpoint)
+  if (disk !== undefined) {
+    memory.set(endpoint, { data: disk, ts: Date.now() })
+    return disk as T
   }
-  const res = await fetch(`${BASE}${endpoint}`, {
+  const res = await fetch(`${UPSTREAM_BASE}${endpoint}`, {
     headers: { "User-Agent": "pokestats-web/0.1" },
   })
   if (!res.ok) throw new Error(`${endpoint} returned ${res.status}`)
-  const data = await res.json()
-  cache.set(endpoint, { data, ts: Date.now() })
-  return data as T
+  const data = await res.json() as T
+  memory.set(endpoint, { data, ts: Date.now() })
+  await writeDiskCache(endpoint, data)
+  return data
 }
 
 export interface ItemEntry {
@@ -60,15 +100,34 @@ export interface Region {
   pokemons: string[]
 }
 
+interface UpstreamPokemonTier {
+  tier: string
+  pokemons?: Record<string, {
+    rank?: number
+    count?: number
+    items?: string[]
+    item_count?: number
+  }>
+}
+
+interface UpstreamItemTier {
+  tier: string
+  items?: Record<string, {
+    rank?: number
+    count?: number
+    pokemons?: string[]
+  }>
+}
+
 export async function fetchPokemonItemRecs(): Promise<Record<string, ItemEntry[]>> {
-  const data = await fetchJSON<any[]>("/meta/items")
+  const data = await fetchJSON<UpstreamItemTier[]>("/meta/items")
   const recs: Record<string, ItemEntry[]> = {}
   for (const tierData of data) {
     const tier = tierData.tier
-    for (const [itemName, item] of Object.entries<Record<string, any>>(tierData.items ?? {})) {
+    for (const [itemName, item] of Object.entries(tierData.items ?? {})) {
       for (const pkm of item.pokemons ?? []) {
         if (!recs[pkm]) recs[pkm] = []
-        recs[pkm].push({ item: itemName, tier, avg_rank: item.rank, count: item.count })
+        recs[pkm].push({ item: itemName, tier, avg_rank: item.rank ?? 0, count: item.count ?? 0 })
       }
     }
   }
@@ -79,16 +138,16 @@ export async function fetchPokemonItemRecs(): Promise<Record<string, ItemEntry[]
 }
 
 export async function fetchPokemonStats(): Promise<PokemonStat[]> {
-  const data = await fetchJSON<any[]>("/meta/pokemons")
+  const data = await fetchJSON<UpstreamPokemonTier[]>("/meta/pokemons")
   const stats: PokemonStat[] = []
   for (const tierData of data) {
     const tier = tierData.tier
-    for (const [name, pkm] of Object.entries<Record<string, any>>(tierData.pokemons ?? {})) {
+    for (const [name, pkm] of Object.entries(tierData.pokemons ?? {})) {
       stats.push({
         pokemon: name,
         tier,
-        avg_rank: pkm.rank,
-        count: pkm.count,
+        avg_rank: pkm.rank ?? 0,
+        count: pkm.count ?? 0,
         items: pkm.items ?? [],
         item_count: pkm.item_count ?? 0,
       })
@@ -98,16 +157,16 @@ export async function fetchPokemonStats(): Promise<PokemonStat[]> {
 }
 
 export async function fetchItemStats(): Promise<ItemStat[]> {
-  const data = await fetchJSON<any[]>("/meta/items")
+  const data = await fetchJSON<UpstreamItemTier[]>("/meta/items")
   const stats: ItemStat[] = []
   for (const tierData of data) {
     const tier = tierData.tier
-    for (const [name, item] of Object.entries<Record<string, any>>(tierData.items ?? {})) {
+    for (const [name, item] of Object.entries(tierData.items ?? {})) {
       stats.push({
         item: name,
         tier,
-        avg_rank: item.rank,
-        count: item.count,
+        avg_rank: item.rank ?? 0,
+        count: item.count ?? 0,
         pokemons: item.pokemons ?? [],
       })
     }
@@ -116,11 +175,9 @@ export async function fetchItemStats(): Promise<ItemStat[]> {
 }
 
 export async function fetchCompositions(): Promise<Composition[]> {
-  const data = await fetchJSON<any[]>("/meta-v2")
-  return data
+  return fetchJSON<Composition[]>("/meta-v2")
 }
 
 export async function fetchRegions(): Promise<Region[]> {
-  const data = await fetchJSON<any[]>("/meta/regions")
-  return data
+  return fetchJSON<Region[]>("/meta/regions")
 }

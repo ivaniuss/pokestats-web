@@ -1,8 +1,10 @@
+"use client"
+
 import { useState, useMemo } from "react"
 
 export type SortDir = "asc" | "desc"
 
-export function useSort<T extends Record<string, any>>(
+export function useSort<T extends object>(
   items: T[],
   defaultKey: keyof T,
   defaultDir: SortDir = "asc",
