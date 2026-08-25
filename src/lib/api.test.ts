@@ -51,24 +51,6 @@ describe("fetchPokemonStats", () => {
   })
 })
 
-describe("fetchItemStats", () => {
-  it("maps items across tiers", async () => {
-    fetchMock.mockResolvedValue(jsonResponse([
-      {
-        tier: "POKE_BALL",
-        items: {
-          RARE_CANDY: { rank: 2.5, count: 900, pokemons: ["PIKACHU", "EEVEE"] },
-        },
-      },
-    ]))
-    const { fetchItemStats } = await import("@/lib/api")
-    const stats = await fetchItemStats()
-    expect(stats).toEqual([
-      { item: "RARE_CANDY", tier: "POKE_BALL", avg_rank: 2.5, count: 900, pokemons: ["PIKACHU", "EEVEE"] },
-    ])
-  })
-})
-
 describe("fetchPokemonItemRecs", () => {
   it("inverts the item→pokemon mapping and sorts by rank then count desc", async () => {
     fetchMock.mockResolvedValue(jsonResponse([
@@ -90,15 +72,17 @@ describe("fetchPokemonItemRecs", () => {
 describe("upstream error handling", () => {
   it("throws on non-OK responses", async () => {
     fetchMock.mockResolvedValue(jsonResponse({ error: "boom" }, 503))
-    const { fetchRegions } = await import("@/lib/api")
-    await expect(fetchRegions()).rejects.toThrow("/meta/regions returned 503")
+    const { fetchPokemonStats } = await import("@/lib/api")
+    await expect(fetchPokemonStats()).rejects.toThrow("/meta/pokemons returned 503")
   })
 
   it("caches responses within the TTL window", async () => {
-    fetchMock.mockResolvedValue(jsonResponse([{ name: "R1", count: 1, rank: 1, elo: 1000, pokemons: [] }]))
-    const { fetchRegions } = await import("@/lib/api")
-    await fetchRegions()
-    await fetchRegions()
+    fetchMock.mockResolvedValue(jsonResponse([
+      { tier: "T1", pokemons: { A: { rank: 1, count: 1 } } },
+    ]))
+    const { fetchPokemonStats } = await import("@/lib/api")
+    await fetchPokemonStats()
+    await fetchPokemonStats()
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })

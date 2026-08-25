@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     template: "%s — PokéStats",
   },
   description:
-    "Live meta data for Pokémon Auto Chess. Analyze stats per Pokémon, find best items, explore winning team compositions, and track performance across all rank tiers.",
+    "Live meta data for Pokémon Auto Chess. Search any Pokémon to see its stats per rank tier and best items.",
   metadataBase: new URL("https://pokestats.gg"),
   openGraph: {
     type: "website",
@@ -16,13 +16,13 @@ export const metadata: Metadata = {
     siteName: "PokéStats",
     title: "PokéStats — Pokémon Auto Chess Stats & Meta Data",
     description:
-      "Live meta data for Pokémon Auto Chess. Analyze stats per Pokémon, find best items, explore winning team compositions, and track performance across all rank tiers.",
+      "Live meta data for Pokémon Auto Chess. Search any Pokémon to see its stats per rank tier and best items.",
   },
   twitter: {
     card: "summary_large_image",
     title: "PokéStats — Pokémon Auto Chess Stats & Meta Data",
     description:
-      "Live meta data for Pokémon Auto Chess. Analyze stats per Pokémon, find best items, explore winning team compositions, and track performance across all rank tiers.",
+      "Live meta data for Pokémon Auto Chess. Search any Pokémon to see its stats per rank tier and best items.",
   },
   icons: {
     icon: "/icon.svg",

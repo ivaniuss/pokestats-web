@@ -37,19 +37,14 @@ const HELP: Record<string, Record<string, { title: string; body: string }>> = {
     pt: { title: "Count", body: "Quantidade de partidas registradas com este dado. Quanto maior, mais representativo estatisticamente. Valores baixos (ex. < 100) podem ser enganosos — uma única partida com sorte distorce a média." },
   },
   pages: {
-    en: { title: "Pages", body: "Best Items — Search Pokémon (items on it) or Items (which Pokémon use it). Ranked by global avg_rank (item performance across ALL Pokémon, not specific). Use Min count filter.\n\nPokémon — Stats per tier. Shows 2-3 most used items by frequency. See what people actually equip.\n\nTop Pokémon / Top Items — Best performers by avg_rank. Filter by tier.\n\nCompositions — Winning team comps from the current meta." },
-    es: { title: "Páginas", body: "Best Items — Busca Pokémon (items que se usan) o Items (qué Pokémon lo usan). Ordenado por avg_rank global (rendimiento del item en TODOS los Pokémon, no uno específico). Usa el filtro Min count.\n\nPokémon — Stats por tier. Muestra los 2-3 items más usados por frecuencia. Para ver qué usa la gente.\n\nTop Pokémon / Top Items — Los mejores por avg_rank. Filtrable por tier.\n\nCompositions — Composiciones ganadoras del meta actual." },
-    pt: { title: "Páginas", body: "Best Items — Pesquise Pokémon (itens usados) ou Items (quais Pokémon usam). Ordenado por avg_rank global (desempenho do item em TODOS os Pokémon, não específico). Use filtro Min count.\n\nPokémon — Estatísticas por tier. Mostra os 2-3 itens mais usados por frequência. Veja o que as pessoas equipam.\n\nTop Pokémon / Top Items — Melhores por avg_rank. Filtrável por tier.\n\nCompositions — Composições vencedoras do meta atual." },
+    en: { title: "Pokémon", body: "Search any Pokémon to see its stats per rank tier: average finishing position, games recorded, and the most used items people equip on it. Click a Pokémon's name to open its detail page." },
+    es: { title: "Pokémon", body: "Busca cualquier Pokémon para ver sus stats por tier: posición promedio al terminar, partidas registradas y los items más usados. Haz clic en el nombre de un Pokémon para abrir su página de detalle." },
+    pt: { title: "Pokémon", body: "Pesquise qualquer Pokémon para ver suas estatísticas por tier: posição média final, partidas registradas e os itens mais usados. Clique no nome de um Pokémon para abrir sua página de detalhes." },
   },
 }
 
 const nav = [
-  { href: "/best-items", label: "Best Items" },
   { href: "/pokemon", label: "Pokémon" },
-  { href: "/top-pokemon", label: "Top Pokémon" },
-  { href: "/top-items", label: "Top Items" },
-  { href: "/compositions", label: "Compositions" },
-  { href: "/regions", label: "Regions" },
   { href: "/contact", label: "Contact" },
 ]
 

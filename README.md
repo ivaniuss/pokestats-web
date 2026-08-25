@@ -1,6 +1,6 @@
 # PokéStats
 
-Live statistics and meta dashboard for [Pokémon Auto Chess](https://pokemon-auto-chess.com) — an auto-battler game. PokéStats aggregates upstream match metadata and surfaces it as browsable tables and charts: per-Pokémon performance, item recommendations, top performers by rank tier, clustered team compositions, and regional stats.
+Live statistics for [Pokémon Auto Chess](https://pokemon-auto-chess.com) — an auto-battler game. PokéStats surfaces per-Pokémon performance: stats by rank tier and best items.
 
 **Production:** https://pokestats.gg
 
@@ -54,10 +54,9 @@ Server Components (async pages) ── statically prerendered, ISR revalidate 36
 Small client components ── filters, sorting, search (interactivity only)
 ```
 
-- **Upstream client** (`src/lib/api.ts`): single entry point for all upstream calls (`/meta/pokemons`, `/meta/items`, `/meta-v2`, `/meta/regions`). Caches responses in memory for one hour per server instance, plus a disk cache under `node_modules/.cache` so parallel build workers don't each re-download the large payloads. Maps raw JSON into typed interfaces (`PokemonStat`, `ItemStat`, `Composition`, `Region`).
+- **Upstream client** (`src/lib/api.ts`): single entry point for upstream calls (`/meta/pokemons`, `/meta/items`). Caches responses in memory for one hour per server instance, plus a disk cache under `node_modules/.cache` so parallel build workers don't each re-download the large payloads. Maps raw JSON into typed interfaces (`PokemonStat`, `ItemEntry`).
 - **Pages** are async Server Components that call `api.ts` directly and export `revalidate = 3600` (ISR). They render full HTML with data baked in — no client-side fetch waterfall.
-- **API routes** (`src/app/api/*/route.ts`) remain available as a public JSON contract: thin GET handlers that delegate to `api.ts`, wrap results with `cachedResponse()` (`src/lib/cache.ts`, `Cache-Control: s-maxage=3600`) and return 502 on upstream failure.
-- **Error handling**: root `error.tsx` boundary with retry, `not-found.tsx`, and a streaming skeleton via `loading.tsx`.
+- **Error handling**: root `error.tsx` boundary with retry and `not-found.tsx`.
 
 ### Assets
 
@@ -83,17 +82,10 @@ pnpm sync:assets            # incremental; add --force to re-download everything
 
 | Route | Description |
 | --- | --- |
-| `/` | Home — card grid linking to each section |
-| `/best-items` | Best items overall, with filtering |
+| `/` | Redirects to `/pokemon` |
 | `/pokemon` | Searchable per-Pokémon stats grouped by tier |
-| `/pokemon/[name]` | Detail page per Pokémon: tier stats + best items (statically generated, linked from sitemap) |
-| `/top-pokemon` | Top performers by ELO tier (LEVEL_BALL → BEAST_BALL) |
-| `/top-items` | Top items by usage and average rank |
-| `/compositions` | Clustered team compositions with winrates |
-| `/regions` | Stats per region |
+| `/pokemon/[name]` | Detail page per Pokémon: tier stats + best items (on-demand rendering, listed in sitemap) |
 | `/contact` | Contact form (Formspree) |
-
-Each page has a sibling `layout.tsx` that only exists to export per-page SEO metadata.
 
 ### Shared components & utilities
 
@@ -106,20 +98,19 @@ Each page has a sibling `layout.tsx` that only exists to export per-page SEO met
 ```
 src/
 ├── app/
-│   ├── layout.tsx          # root layout + global SEO metadata
-│   ├── page.tsx            # home
-│   ├── error.tsx           # global error boundary (retry)
-│   ├── not-found.tsx       # 404 UI
-│   ├── loading.tsx         # streaming skeleton
-│   ├── nav-client.tsx      # nav / mobile menu / help modal
-│   ├── sitemap.ts          # sitemap incl. per-Pokémon URLs
-│   ├── robots.ts           # robots.txt
-│   ├── api/                # route handlers — public JSON contract
-│   └── <page>/             # page.tsx (server) + client view components
-├── components/             # shared UI components
-└── lib/                    # api.ts (upstream client), pkm-index.ts
+│   ├── layout.tsx              # root layout + global SEO metadata
+│   ├── page.tsx                # redirects to /pokemon
+│   ├── error.tsx               # global error boundary (retry)
+│   ├── not-found.tsx           # 404 UI
+│   ├── nav-client.tsx          # nav / mobile menu / help modal
+│   ├── sitemap.ts              # sitemap incl. per-Pokémon URLs
+│   ├── robots.ts               # robots.txt
+│   ├── pokemon/                # search + [name] detail pages
+│   └── contact/                # contact form
+├── components/                 # shared UI components
+└── lib/                        # api.ts (upstream client), pkm-index.ts
 scripts/
-└── sync-assets.mjs         # sprite + index sync from the game repo
+└── sync-assets.mjs             # sprite + index sync from the game repo
 ```
 
 ## Testing & CI
@@ -128,7 +119,7 @@ Unit tests (Vitest) cover the upstream response shaping in `src/lib/api.test.ts`
 
 ## Deployment
 
-Deployed on Vercel. Pushing to the main branch triggers a deployment; pages are statically prerendered and revalidated hourly (ISR), while API responses are edge-cached via the `Cache-Control` headers described above.
+Deployed on Vercel. Pushing to the main branch triggers a deployment; pages are prerendered and revalidated hourly (ISR).
 
 ## Notes for Contributors
 

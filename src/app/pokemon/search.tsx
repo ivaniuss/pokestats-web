@@ -38,17 +38,12 @@ function PokemonGroup({ name, entries, registerRef }: {
   }
 
   return (
-    <details className="mb-3" ref={(el) => registerRef(name, el)}>
-      <summary className="cursor-pointer text-lg font-semibold flex items-center gap-2">
-        <PkmImg name={name} index={pkmIndex[name]} size={36} />
-        <Link
-          href={`/pokemon/${name.toLowerCase()}`}
-          className="text-yellow-400 hover:text-yellow-300"
-          onClick={(e) => e.stopPropagation()}
-        >
+    <div className="mb-3 flex items-start gap-2">
+      <details className="flex-1" ref={(el) => registerRef(name, el)}>
+        <summary className="cursor-pointer text-lg font-semibold text-yellow-400 flex items-center gap-2">
+          <PkmImg name={name} index={pkmIndex[name]} size={36} />
           {name}
-        </Link>
-      </summary>
+        </summary>
       <div className="overflow-x-auto mt-2">
         <table className="w-full text-sm whitespace-nowrap">
           <thead>
@@ -82,7 +77,14 @@ function PokemonGroup({ name, entries, registerRef }: {
           </tbody>
         </table>
       </div>
-    </details>
+      </details>
+      <Link
+        href={`/pokemon/${name.toLowerCase()}`}
+        className="shrink-0 mt-2 text-xs text-slate-500 hover:text-yellow-400"
+      >
+        View →
+      </Link>
+    </div>
   )
 }
 

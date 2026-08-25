@@ -72,34 +72,6 @@ export interface PokemonStat {
   item_count: number
 }
 
-export interface ItemStat {
-  item: string
-  tier: string
-  avg_rank: number
-  count: number
-  pokemons: string[]
-}
-
-export interface Composition {
-  cluster_id: string
-  mean_rank: number
-  winrate: number
-  count: number
-  ratio: number
-  synergies: Record<string, number>
-  mean_team: {
-    pokemons: Record<string, { frequency: number; mean_items: number; items: string[] }>
-  }
-}
-
-export interface Region {
-  name: string
-  count: number
-  rank: number
-  elo: number
-  pokemons: string[]
-}
-
 interface UpstreamPokemonTier {
   tier: string
   pokemons?: Record<string, {
@@ -156,28 +128,4 @@ export async function fetchPokemonStats(): Promise<PokemonStat[]> {
   return stats
 }
 
-export async function fetchItemStats(): Promise<ItemStat[]> {
-  const data = await fetchJSON<UpstreamItemTier[]>("/meta/items")
-  const stats: ItemStat[] = []
-  for (const tierData of data) {
-    const tier = tierData.tier
-    for (const [name, item] of Object.entries(tierData.items ?? {})) {
-      stats.push({
-        item: name,
-        tier,
-        avg_rank: item.rank ?? 0,
-        count: item.count ?? 0,
-        pokemons: item.pokemons ?? [],
-      })
-    }
-  }
-  return stats
-}
 
-export async function fetchCompositions(): Promise<Composition[]> {
-  return fetchJSON<Composition[]>("/meta-v2")
-}
-
-export async function fetchRegions(): Promise<Region[]> {
-  return fetchJSON<Region[]>("/meta/regions")
-}
