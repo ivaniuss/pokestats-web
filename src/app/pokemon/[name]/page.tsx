@@ -42,7 +42,19 @@ export default async function PokemonDetailPage({ params }: PageProps) {
   const sorted = [...entries].sort((a, b) => b.count - a.count)
   const totalCount = entries.reduce((acc, e) => acc + e.count, 0)
   const avgRank = entries.reduce((acc, e) => acc + e.avg_rank * e.count, 0) / (totalCount || 1)
-  const recommended = (recs[name] ?? []).slice(0, 8)
+  const recommended = (() => {
+    const map = new Map<string, { count: number; rankSum: number }>()
+    for (const r of recs[name] ?? []) {
+      const cur = map.get(r.item) ?? { count: 0, rankSum: 0 }
+      cur.count += r.count
+      cur.rankSum += r.avg_rank * r.count
+      map.set(r.item, cur)
+    }
+    return [...map.entries()]
+      .map(([item, v]) => ({ item, avg_rank: v.rankSum / v.count, count: v.count }))
+      .sort((a, b) => a.avg_rank - b.avg_rank || b.count - a.count)
+      .slice(0, 8)
+  })()
 
   const evo = getEvolutionInfo(name)
   const preEvo = getPreEvolution(name)
@@ -105,7 +117,16 @@ export default async function PokemonDetailPage({ params }: PageProps) {
                 <td className="text-right pr-4 tabular-nums">{e.avg_rank.toFixed(2)}</td>
                 <td className="text-right pr-4 tabular-nums text-slate-400">{e.count.toLocaleString()}</td>
                 <td className="py-2 text-xs text-slate-400 hidden md:table-cell">
-                  {e.items.length > 0 ? e.items.slice(0, 5).join(", ") : "—"}
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {e.items.length > 0
+                      ? e.items.slice(0, 5).map((it) => (
+                          <span key={it} className="flex items-center gap-1 mr-2">
+                            <ItemImg name={it} size={16} />
+                            {it}
+                          </span>
+                        ))
+                      : "—"}
+                  </div>
                 </td>
               </tr>
             ))}
