@@ -9,8 +9,6 @@ interface PageProps {
   params: Promise<{ name: string }>
 }
 
-export const dynamicParams = false
-
 function getEntries(stats: PokemonStat[], name: string) {
   return stats.filter((s) => s.pokemon === name)
 }
