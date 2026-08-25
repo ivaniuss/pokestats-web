@@ -26,14 +26,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export async function generateStaticParams() {
-  try {
-    const stats = await fetchPokemonStats()
-    return [...new Set(stats.map((s) => s.pokemon))].map((name) => ({ name }))
-  } catch {
-    return []
-  }
-}
+export const revalidate = 3600
 
 export default async function PokemonDetailPage({ params }: PageProps) {
   const { name: raw } = await params
