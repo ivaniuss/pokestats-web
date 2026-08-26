@@ -73,7 +73,10 @@ function PokemonGroup({ name, entries, recs, registerRef }: {
                 .sort((a, b) => a.avg_rank - b.avg_rank || b.count - a.count)
                 .slice(0, 3)
                 .map((r) => r.item)
-              const display = best.length > 0 ? best : s.items.slice(0, 3)
+              const display =
+                best.length >= 3
+                  ? best
+                  : [...best, ...s.items.filter((it) => !best.includes(it))].slice(0, 3)
               return (
                 <tr key={s.tier} className="border-b border-slate-800 hover:bg-slate-800/50">
                   <td className="py-2 pr-4">{s.tier}</td>
