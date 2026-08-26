@@ -99,6 +99,20 @@ export default async function PokemonDetailPage({ params }: PageProps) {
         </div>
       )}
 
+      <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+        <h2 className="text-sm font-bold text-emerald-400 mb-2">Starter build — what to equip first</h2>
+        <p className="text-xs text-slate-400 mb-3">Best average rank across all tiers (min 10 games). Equip these 3 first if you’re learning.</p>
+        <div className="flex flex-wrap gap-2">
+          {recommended.slice(0, 3).map((r) => (
+            <span key={r.item} className="flex items-center gap-2 bg-slate-800 rounded-full px-3 py-1 text-sm">
+              <ItemImg name={r.item} size={20} />
+              <span className="text-slate-100">{r.item}</span>
+              <span className="text-xs text-slate-500">avg {r.avg_rank.toFixed(2)} · {r.count.toLocaleString()} games</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
       <h2 className="text-lg font-semibold mb-2">Stats by rank tier</h2>
       <div className="overflow-x-auto mb-8">
         <table className="w-full text-sm whitespace-nowrap">

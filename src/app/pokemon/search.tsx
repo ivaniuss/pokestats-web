@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import type { PokemonStat } from "@/lib/api"
+import type { ItemEntry, PokemonStat } from "@/lib/api"
 import { PkmImg, ItemImg } from "@/components/pkm-img"
 import { SortTh } from "@/components/sort"
 import { pkmIndex } from "@/lib/pkm-index"
@@ -10,9 +10,10 @@ import { getEvolutionInfo } from "@/lib/evolutions"
 
 type GroupSortKey = Extract<keyof PokemonStat, "tier" | "avg_rank" | "count">
 
-function PokemonGroup({ name, entries, registerRef }: {
+function PokemonGroup({ name, entries, recs, registerRef }: {
   name: string
   entries: PokemonStat[]
+  recs: Record<string, ItemEntry[]>
   registerRef: (name: string, el: HTMLDetailsElement | null) => void
 }) {
   const [sortKey, setSortKey] = useState<GroupSortKey>("avg_rank")
@@ -40,6 +41,21 @@ function PokemonGroup({ name, entries, registerRef }: {
 
   const evo = getEvolutionInfo(name)
 
+  const starterBuild = (() => {
+    const map = new Map<string, { count: number; rankSum: number }>()
+    for (const r of recs[name] ?? []) {
+      const cur = map.get(r.item) ?? { count: 0, rankSum: 0 }
+      cur.count += r.count
+      cur.rankSum += r.avg_rank * r.count
+      map.set(r.item, cur)
+    }
+    return [...map.entries()]
+      .map(([item, v]) => ({ item, avg_rank: v.rankSum / v.count, count: v.count }))
+      .filter((x) => x.count >= 10)
+      .sort((a, b) => a.avg_rank - b.avg_rank || b.count - a.count)
+      .slice(0, 3)
+  })()
+
   return (
     <div className="mb-3 flex items-start gap-2">
       <details className="flex-1" ref={(el) => registerRef(name, el)}>
@@ -55,6 +71,20 @@ function PokemonGroup({ name, entries, registerRef }: {
             </span>
           </div>
         )}
+        {starterBuild.length > 0 && (
+          <div className="mt-2 mb-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2">
+            <p className="text-xs font-semibold text-emerald-400 mb-1">Starter build — best for beginners</p>
+            <div className="flex flex-wrap gap-2">
+              {starterBuild.map((s) => (
+                <span key={s.item} className="flex items-center gap-1 text-xs bg-slate-800 rounded-full px-2 py-1">
+                  <ItemImg name={s.item} size={16} />
+                  <span className="text-slate-200">{s.item}</span>
+                  <span className="text-slate-500">avg {s.avg_rank.toFixed(2)}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       <div className="overflow-x-auto mt-2">
         <table className="w-full text-sm whitespace-nowrap">
           <thead>
@@ -66,25 +96,33 @@ function PokemonGroup({ name, entries, registerRef }: {
             </tr>
           </thead>
           <tbody>
-            {sorted.map((s) => (
-              <tr key={s.tier} className="border-b border-slate-800 hover:bg-slate-800/50">
-                <td className="py-2 pr-4">{s.tier}</td>
-                <td className="text-right pr-4 tabular-nums">{s.avg_rank.toFixed(2)}</td>
-                <td className="text-right pr-4 tabular-nums text-slate-400">{s.count}</td>
-                <td className="py-2 text-xs text-slate-400 hidden md:table-cell">
-                  <div className="flex items-center gap-1 flex-wrap">
-                    {s.items.length > 0
-                      ? s.items.slice(0, 8).map((item) => (
-                        <span key={item} className="flex items-center gap-1 mr-2">
-                          <ItemImg name={item} size={16} />
-                          {item}
-                        </span>
-                      ))
-                      : "—"}
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {sorted.map((s) => {
+              const best = (recs[name] ?? [])
+                .filter((r) => r.tier === s.tier)
+                .sort((a, b) => a.avg_rank - b.avg_rank || b.count - a.count)
+                .slice(0, 3)
+                .map((r) => r.item)
+              const display = best.length > 0 ? best : s.items.slice(0, 3)
+              return (
+                <tr key={s.tier} className="border-b border-slate-800 hover:bg-slate-800/50">
+                  <td className="py-2 pr-4">{s.tier}</td>
+                  <td className="text-right pr-4 tabular-nums">{s.avg_rank.toFixed(2)}</td>
+                  <td className="text-right pr-4 tabular-nums text-slate-400">{s.count}</td>
+                  <td className="py-2 text-xs text-slate-400 hidden md:table-cell">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {display.length > 0
+                        ? display.map((item) => (
+                            <span key={item} className="flex items-center gap-1 mr-2">
+                              <ItemImg name={item} size={16} />
+                              {item}
+                            </span>
+                          ))
+                        : "—"}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -99,7 +137,7 @@ function PokemonGroup({ name, entries, registerRef }: {
   )
 }
 
-export default function PokemonSearch({ stats }: { stats: PokemonStat[] }) {
+export default function PokemonSearch({ stats, recs }: { stats: PokemonStat[]; recs: Record<string, ItemEntry[]> }) {
   const [query, setQuery] = useState("")
   const detailsRefs = useRef<Map<string, HTMLDetailsElement>>(new Map())
 
@@ -139,7 +177,7 @@ export default function PokemonSearch({ stats }: { stats: PokemonStat[] }) {
         }}
       />
       {[...grouped.entries()].map(([name, entries]) => (
-        <PokemonGroup key={name} name={name} entries={entries} registerRef={registerRef} />
+        <PokemonGroup key={name} name={name} entries={entries} recs={recs} registerRef={registerRef} />
       ))}
       {query && filtered.length === 0 && <p className="text-slate-500">No matches.</p>}
     </>
