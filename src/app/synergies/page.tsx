@@ -69,13 +69,7 @@ export default async function SynergiesPage() {
     getCategoryMap(),
   ])
 
-  const CARRY_CATEGORIES = new Set(["UNIQUE", "LEGENDARY", "ULTRA", "EPIC"])
-  const data: Record<string, { items: { item: string; avg_rank: number; count: number; recipe?: [string, string] }[]; pokemons: string[] }> = {}
-
-  for (const [syn, set] of synergyMap) {
-    const allPokemons = [...set].sort()
-    const carryPokemons = allPokemons.filter((p) => CARRY_CATEGORIES.has(categoryMap.get(p) ?? ""))
-    const pokemons = carryPokemons.length >= 3 ? carryPokemons : allPokemons
+  function topItemsFor(pokemons: string[]) {
     const agg = new Map<string, { count: number; rankSum: number; pokes: Set<string> }>()
     for (const pkm of pokemons) {
       for (const r of recs[pkm] ?? []) {
@@ -112,7 +106,35 @@ export default async function SynergiesPage() {
         .slice(0, 8)
         .map(({ item, avg_rank, count }) => ({ item, avg_rank, count, recipe: recipe.get(item) }))
     }
-    data[syn] = { items, pokemons: allPokemons }
+    return items
+  }
+
+  const data: Record<
+    string,
+    {
+      items: { item: string; avg_rank: number; count: number; recipe?: [string, string] }[]
+      uniqueItems: { item: string; avg_rank: number; count: number; recipe?: [string, string] }[]
+      legendaryItems: { item: string; avg_rank: number; count: number; recipe?: [string, string] }[]
+      pokemons: string[]
+      uniques: string[]
+      legendaries: string[]
+    }
+  > = {}
+
+  for (const [syn, set] of synergyMap) {
+    const allPokemons = [...set].sort()
+    const uniques = allPokemons.filter((p) => categoryMap.get(p) === "UNIQUE")
+    const legendaries = allPokemons.filter((p) => categoryMap.get(p) === "LEGENDARY")
+    const carryPokemons = allPokemons.filter((p) => ["UNIQUE", "LEGENDARY", "ULTRA", "EPIC"].includes(categoryMap.get(p) ?? ""))
+    const base = carryPokemons.length >= 3 ? carryPokemons : allPokemons
+    data[syn] = {
+      items: topItemsFor(base),
+      uniqueItems: uniques.length ? topItemsFor(uniques) : [],
+      legendaryItems: legendaries.length ? topItemsFor(legendaries) : [],
+      pokemons: allPokemons,
+      uniques,
+      legendaries,
+    }
   }
 
   return (
