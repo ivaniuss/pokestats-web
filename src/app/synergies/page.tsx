@@ -111,30 +111,16 @@ export default async function SynergiesPage() {
 
   const data: Record<
     string,
-    {
-      items: { item: string; avg_rank: number; count: number; recipe?: [string, string] }[]
-      uniqueItems: { item: string; avg_rank: number; count: number; recipe?: [string, string] }[]
-      legendaryItems: { item: string; avg_rank: number; count: number; recipe?: [string, string] }[]
-      pokemons: string[]
-      uniques: string[]
-      legendaries: string[]
-    }
+    { items: { item: string; avg_rank: number; count: number; recipe?: [string, string] }[]; pokemons: string[]; categoryMap: Record<string, string> }
   > = {}
 
   for (const [syn, set] of synergyMap) {
     const allPokemons = [...set].sort()
-    const uniques = allPokemons.filter((p) => categoryMap.get(p) === "UNIQUE")
-    const legendaries = allPokemons.filter((p) => categoryMap.get(p) === "LEGENDARY")
     const carryPokemons = allPokemons.filter((p) => ["UNIQUE", "LEGENDARY", "ULTRA", "EPIC"].includes(categoryMap.get(p) ?? ""))
     const base = carryPokemons.length >= 3 ? carryPokemons : allPokemons
-    data[syn] = {
-      items: topItemsFor(base),
-      uniqueItems: uniques.length ? topItemsFor(uniques) : [],
-      legendaryItems: legendaries.length ? topItemsFor(legendaries) : [],
-      pokemons: allPokemons,
-      uniques,
-      legendaries,
-    }
+    const catMap: Record<string, string> = {}
+    for (const p of allPokemons) catMap[p] = categoryMap.get(p) ?? ""
+    data[syn] = { items: topItemsFor(base), pokemons: allPokemons, categoryMap: catMap }
   }
 
   return (
