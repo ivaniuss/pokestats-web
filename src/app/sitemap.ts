@@ -10,6 +10,7 @@ const SKIP = new Set(["DEFAULT", "EGG", "SUBSTITUTE"])
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${base}/pokemon`, changeFrequency: "daily", priority: 1 },
+    { url: `${base}/synergies`, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/contact`, changeFrequency: "monthly", priority: 0.3 },
   ]
 

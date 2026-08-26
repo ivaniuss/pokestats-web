@@ -85,6 +85,7 @@ pnpm sync:assets            # incremental; add --force to re-download everything
 | `/` | Redirects to `/pokemon` |
 | `/pokemon` | Searchable per-Pokémon stats grouped by tier |
 | `/pokemon/[name]` | Detail page per Pokémon: tier stats + best items (on-demand rendering, listed in sitemap) |
+| `/synergies` | Best items to collect early for a synergy (e.g. WATER) — for beginners planning ahead |
 | `/contact` | Contact form (Formspree) |
 
 ### Shared components & utilities

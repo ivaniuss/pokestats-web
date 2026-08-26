@@ -45,6 +45,7 @@ const HELP: Record<string, Record<string, { title: string; body: string }>> = {
 
 const nav = [
   { href: "/pokemon", label: "Pokémon" },
+  { href: "/synergies", label: "Synergies" },
   { href: "/contact", label: "Contact" },
 ]
 
