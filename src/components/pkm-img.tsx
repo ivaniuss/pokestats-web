@@ -1,14 +1,17 @@
 "use client"
 
+import { getPkmIndex } from "@/lib/pkm-index"
+
 function pkmImgSrc(index: string, emotion = "Normal") {
   const parts = index.split("-")
   return `/assets/portraits/${parts.join("/")}/${emotion}.png`
 }
 
 export function PkmImg({ name, index, size = 40 }: { name: string; index?: string; size?: number }) {
+  const resolved = index ?? getPkmIndex(name)
   return (
     <img
-      src={pkmImgSrc(index ?? "0000")}
+      src={pkmImgSrc(resolved)}
       alt={name}
       width={size}
       height={size}
