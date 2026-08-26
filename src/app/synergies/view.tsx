@@ -5,7 +5,7 @@ import Link from "next/link"
 import { PkmImg, ItemImg } from "@/components/pkm-img"
 import { pkmIndex } from "@/lib/pkm-index"
 
-type SynergyData = Record<string, { items: { item: string; avg_rank: number; count: number }[]; pokemons: string[] }>
+type SynergyData = Record<string, { items: { item: string; avg_rank: number; count: number; recipe?: [string, string] }[]; pokemons: string[] }>
 
 export default function SynergyView({ data }: { data: SynergyData }) {
   const synergies = Object.keys(data).sort()
@@ -37,12 +37,19 @@ export default function SynergyView({ data }: { data: SynergyData }) {
           <h2 className="text-sm font-semibold text-slate-300 mb-2">Best items for {selected} — collect these early</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
             {entry.items.map((it) => (
-              <div key={it.item} className="border border-slate-700 rounded-xl p-3 flex items-center gap-3">
-                <ItemImg name={it.item} size={28} />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{it.item}</p>
-                  <p className="text-xs text-slate-400">avg {it.avg_rank.toFixed(2)} · {it.count.toLocaleString()} games</p>
+              <div key={it.item} className="border border-slate-700 rounded-xl p-3">
+                <div className="flex items-center gap-3">
+                  <ItemImg name={it.item} size={28} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{it.item}</p>
+                    <p className="text-xs text-slate-400">avg {it.avg_rank.toFixed(2)} · {it.count.toLocaleString()} games</p>
+                  </div>
                 </div>
+                {it.recipe && (
+                  <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                    <span>from</span> <ItemImg name={it.recipe[0]} size={14} /> {it.recipe[0]} <span>+</span> <ItemImg name={it.recipe[1]} size={14} /> {it.recipe[1]}
+                  </p>
+                )}
               </div>
             ))}
           </div>

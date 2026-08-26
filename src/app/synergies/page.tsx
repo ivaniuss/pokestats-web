@@ -9,22 +9,31 @@ export const metadata = {
   description: "Best items to collect early when playing a synergy in Pokémon Auto Chess — what to pick before you know your final legendary.",
 }
 
-async function getCraftableSet(): Promise<Set<string>> {
+async function getCraftableData(): Promise<{ set: Set<string>; recipe: Map<string, [string, string]> }> {
   try {
     const res = await fetch("https://raw.githubusercontent.com/keldaanCommunity/pokemonAutoChess/master/app/types/enum/Item.ts", {
       next: { revalidate: 3600 },
     })
     const txt = await res.text()
-    return new Set([...txt.matchAll(/\[Item\.(\w+)\]:/g)].map((m) => m[1]))
+    const block = txt.slice(txt.indexOf("export const ItemRecipe"), txt.indexOf("export const Scarves"))
+    const recipe = new Map<string, [string, string]>()
+    for (const m of block.matchAll(/\[Item\.(\w+)\]:\s*\[Item\.(\w+),\s*Item\.(\w+)\]/g)) {
+      recipe.set(m[1], [m[2], m[3]])
+    }
+    return { set: new Set(recipe.keys()), recipe }
   } catch {
-    return new Set()
+    return { set: new Set(), recipe: new Map() }
   }
 }
 
 export default async function SynergiesPage() {
-  const [synergyMap, recs, craftable] = await Promise.all([getSynergyMap(), fetchPokemonItemRecs(), getCraftableSet()])
+  const [synergyMap, recs, { set: craftable, recipe }] = await Promise.all([
+    getSynergyMap(),
+    fetchPokemonItemRecs(),
+    getCraftableData(),
+  ])
 
-  const data: Record<string, { items: { item: string; avg_rank: number; count: number }[]; pokemons: string[] }> = {}
+  const data: Record<string, { items: { item: string; avg_rank: number; count: number; recipe?: [string, string] }[]; pokemons: string[] }> = {}
 
   for (const [syn, set] of synergyMap) {
     const pokemons = [...set].sort()
@@ -48,20 +57,20 @@ export default async function SynergiesPage() {
       .filter((x) => craftable.has(x.item) && x.count >= 100 && x.pokeCount >= 2)
       .sort((a, b) => a.avg_rank - b.avg_rank || b.count - a.count)
       .slice(0, 8)
-      .map(({ item, avg_rank, count }) => ({ item, avg_rank, count }))
+      .map(({ item, avg_rank, count }) => ({ item, avg_rank, count, recipe: recipe.get(item) }))
     if (items.length < 4) {
       items = all
         .filter((x) => craftable.has(x.item) && x.count >= 20)
         .sort((a, b) => a.avg_rank - b.avg_rank || b.count - a.count)
         .slice(0, 8)
-        .map(({ item, avg_rank, count }) => ({ item, avg_rank, count }))
+        .map(({ item, avg_rank, count }) => ({ item, avg_rank, count, recipe: recipe.get(item) }))
     }
     if (items.length === 0) {
       items = all
         .filter((x) => x.count >= 20)
         .sort((a, b) => a.avg_rank - b.avg_rank || b.count - a.count)
         .slice(0, 8)
-        .map(({ item, avg_rank, count }) => ({ item, avg_rank, count }))
+        .map(({ item, avg_rank, count }) => ({ item, avg_rank, count, recipe: recipe.get(item) }))
     }
     data[syn] = { items, pokemons }
   }
