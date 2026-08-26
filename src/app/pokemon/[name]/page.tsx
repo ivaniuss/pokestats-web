@@ -5,6 +5,7 @@ import { fetchPokemonStats, fetchPokemonItemRecs, type PokemonStat } from "@/lib
 import { PkmImg, ItemImg } from "@/components/pkm-img"
 import { pkmIndex } from "@/lib/pkm-index"
 import { getEvolutionInfo, getPreEvolution, getRelatedForms } from "@/lib/evolutions"
+import { getCraftableSet } from "@/lib/craftable"
 
 interface PageProps {
   params: Promise<{ name: string }>
@@ -35,7 +36,7 @@ export default async function PokemonDetailPage({ params }: PageProps) {
 
   if (!(name in pkmIndex)) notFound()
 
-  const [stats, recs] = await Promise.all([fetchPokemonStats(), fetchPokemonItemRecs()])
+  const [stats, recs, craftable] = await Promise.all([fetchPokemonStats(), fetchPokemonItemRecs(), getCraftableSet()])
   const entries = getEntries(stats, name)
   if (entries.length === 0) notFound()
 
@@ -45,6 +46,7 @@ export default async function PokemonDetailPage({ params }: PageProps) {
   const recommended = (() => {
     const map = new Map<string, { count: number; rankSum: number }>()
     for (const r of recs[name] ?? []) {
+      if (!craftable.has(r.item)) continue
       const cur = map.get(r.item) ?? { count: 0, rankSum: 0 }
       cur.count += r.count
       cur.rankSum += r.avg_rank * r.count
@@ -118,14 +120,17 @@ export default async function PokemonDetailPage({ params }: PageProps) {
                 <td className="text-right pr-4 tabular-nums text-slate-400">{e.count.toLocaleString()}</td>
                 <td className="py-2 text-xs text-slate-400 hidden md:table-cell">
                   <div className="flex items-center gap-1 flex-wrap">
-                    {e.items.length > 0
-                      ? e.items.slice(0, 5).map((it) => (
-                          <span key={it} className="flex items-center gap-1 mr-2">
-                            <ItemImg name={it} size={16} />
-                            {it}
-                          </span>
-                        ))
-                      : "—"}
+                    {(() => {
+                      const filtered = e.items.filter((it) => craftable.has(it)).slice(0, 3)
+                      return filtered.length > 0
+                        ? filtered.map((it) => (
+                            <span key={it} className="flex items-center gap-1 mr-2">
+                              <ItemImg name={it} size={16} />
+                              {it}
+                            </span>
+                          ))
+                        : "—"
+                    })()}
                   </div>
                 </td>
               </tr>

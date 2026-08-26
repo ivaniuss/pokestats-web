@@ -10,10 +10,11 @@ import { getEvolutionInfo } from "@/lib/evolutions"
 
 type GroupSortKey = Extract<keyof PokemonStat, "tier" | "avg_rank" | "count">
 
-function PokemonGroup({ name, entries, recs, registerRef }: {
+function PokemonGroup({ name, entries, recs, craftable, registerRef }: {
   name: string
   entries: PokemonStat[]
   recs: Record<string, ItemEntry[]>
+  craftable: Set<string>
   registerRef: (name: string, el: HTMLDetailsElement | null) => void
 }) {
   const [sortKey, setSortKey] = useState<GroupSortKey>("avg_rank")
@@ -69,14 +70,14 @@ function PokemonGroup({ name, entries, recs, registerRef }: {
           <tbody>
             {sorted.map((s) => {
               const best = (recs[name] ?? [])
-                .filter((r) => r.tier === s.tier)
+                .filter((r) => r.tier === s.tier && craftable.has(r.item))
                 .sort((a, b) => a.avg_rank - b.avg_rank || b.count - a.count)
                 .slice(0, 3)
                 .map((r) => r.item)
               const display =
                 best.length >= 3
                   ? best
-                  : [...best, ...s.items.filter((it) => !best.includes(it))].slice(0, 3)
+                  : [...best, ...s.items.filter((it) => craftable.has(it) && !best.includes(it))].slice(0, 3)
               return (
                 <tr key={s.tier} className="border-b border-slate-800 hover:bg-slate-800/50">
                   <td className="py-2 pr-4">{s.tier}</td>
@@ -111,7 +112,7 @@ function PokemonGroup({ name, entries, recs, registerRef }: {
   )
 }
 
-export default function PokemonSearch({ stats, recs }: { stats: PokemonStat[]; recs: Record<string, ItemEntry[]> }) {
+export default function PokemonSearch({ stats, recs, craftable }: { stats: PokemonStat[]; recs: Record<string, ItemEntry[]>; craftable: Set<string> }) {
   const [query, setQuery] = useState("")
   const detailsRefs = useRef<Map<string, HTMLDetailsElement>>(new Map())
 
@@ -151,7 +152,7 @@ export default function PokemonSearch({ stats, recs }: { stats: PokemonStat[]; r
         }}
       />
       {[...grouped.entries()].map(([name, entries]) => (
-        <PokemonGroup key={name} name={name} entries={entries} recs={recs} registerRef={registerRef} />
+        <PokemonGroup key={name} name={name} entries={entries} recs={recs} craftable={craftable} registerRef={registerRef} />
       ))}
       {query && filtered.length === 0 && <p className="text-slate-500">No matches.</p>}
     </>

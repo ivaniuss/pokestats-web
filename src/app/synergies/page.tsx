@@ -1,4 +1,5 @@
 import { fetchPokemonItemRecs } from "@/lib/api"
+import { getCraftableSet } from "@/lib/craftable"
 import { getSynergyMap } from "@/lib/synergy-map"
 import SynergyView from "./view"
 
@@ -9,7 +10,7 @@ export const metadata = {
   description: "Best items to collect early when playing a synergy in Pokémon Auto Chess — what to pick before you know your final legendary.",
 }
 
-async function getCraftableData(): Promise<{ set: Set<string>; recipe: Map<string, [string, string]> }> {
+async function getRecipeMap(): Promise<Map<string, [string, string]>> {
   try {
     const res = await fetch("https://raw.githubusercontent.com/keldaanCommunity/pokemonAutoChess/master/app/types/enum/Item.ts", {
       next: { revalidate: 3600 },
@@ -20,17 +21,18 @@ async function getCraftableData(): Promise<{ set: Set<string>; recipe: Map<strin
     for (const m of block.matchAll(/\[Item\.(\w+)\]:\s*\[Item\.(\w+),\s*Item\.(\w+)\]/g)) {
       recipe.set(m[1], [m[2], m[3]])
     }
-    return { set: new Set(recipe.keys()), recipe }
+    return recipe
   } catch {
-    return { set: new Set(), recipe: new Map() }
+    return new Map()
   }
 }
 
 export default async function SynergiesPage() {
-  const [synergyMap, recs, { set: craftable, recipe }] = await Promise.all([
+  const [synergyMap, recs, craftable, recipe] = await Promise.all([
     getSynergyMap(),
     fetchPokemonItemRecs(),
-    getCraftableData(),
+    getCraftableSet(),
+    getRecipeMap(),
   ])
 
   const data: Record<string, { items: { item: string; avg_rank: number; count: number; recipe?: [string, string] }[]; pokemons: string[] }> = {}
